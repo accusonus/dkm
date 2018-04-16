@@ -183,7 +183,7 @@ used for initializing the means.
 */
 template <typename T, size_t N>
 std::tuple<std::vector<std::array<T, N>>, std::vector<uint32_t>> kmeans_lloyd(
-	const std::vector<std::array<T, N>>& data, uint32_t k) {
+	const std::vector<std::array<T, N>>& data, uint32_t k, int maxIter) {
 	static_assert(std::is_arithmetic<T>::value && std::is_signed<T>::value,
 		"kmeans_lloyd requires the template parameter T to be a signed arithmetic type (e.g. float, double, int)");
 	assert(k > 0); // k must be greater than zero
@@ -199,7 +199,7 @@ std::tuple<std::vector<std::array<T, N>>, std::vector<uint32_t>> kmeans_lloyd(
 		old_means = means;
 		means = details::calculate_means(data, clusters, old_means, k);
 		++count;
-	} while (means != old_means);
+	} while (means != old_means || count<maxIter);
 
 	return std::tuple<std::vector<std::array<T, N>>, std::vector<uint32_t>>(means, clusters);
 }
