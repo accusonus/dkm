@@ -45,12 +45,22 @@ template <typename T, size_t N>
 float point_collection_epsilon(const std::vector< std::array<T, N> >& point_a, const std::vector< std::array<T, N> >& point_b) {
     assert( point_a.size() == point_b.size() );
     float d_squared = 0.0f;
-    for( typename std::vector< std::array<T, N> >::size_type pointNum = 0; pointNum < point_a.size(); ++pointNum) {
-        
-        float point_d = distance_squared( point_a[pointNum], point_b[pointNum] );
-        d_squared += point_d/N;
+    std::array<T, N> means_a;
+    std::array<T, N> means_b;
+    for (int dim=0; dim<N; dim++){
+        for (int pointIndex=0; pointIndex<point_a.size();pointIndex++){
+            means_a[dim]+= point_a[pointIndex][dim];
+        }
+        means_a[dim]/=point_a.size();
     }
-    d_squared /= point_a.size();
+    for (int dim=0; dim<N; dim++){
+        for (int pointIndex=0; pointIndex<point_b.size();pointIndex++){
+            means_b[dim]+= point_b[pointIndex][dim];
+        }
+        means_b[dim]/=point_b.size();
+    }
+    d_squared = distance(means_a, means_b);
+    
     return d_squared;
 }
     
