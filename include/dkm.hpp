@@ -38,6 +38,11 @@ T distance_squared(const std::array<T, N>& point_a, const std::array<T, N>& poin
 	return d_squared;
 }
 
+template <typename T, size_t N>
+T distance(const std::array<T, N>& point_a, const std::array<T, N>& point_b) {
+    return std::sqrt(distance_squared(point_a, point_b));
+}
+    
 /*
  Calculate the mean square float distance between a collection of points.
  */
@@ -59,14 +64,9 @@ float point_collection_epsilon(const std::vector< std::array<T, N> >& point_a, c
         }
         means_b[dim]/=point_b.size();
     }
-    d_squared = distance(means_a, means_b);
+    d_squared =distance(means_a, means_b);
     
     return d_squared;
-}
-    
-template <typename T, size_t N>
-T distance(const std::array<T, N>& point_a, const std::array<T, N>& point_b) {
-	return std::sqrt(distance_squared(point_a, point_b));
 }
 
 /*
