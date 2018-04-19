@@ -40,7 +40,33 @@ T distance_squared(const std::array<T, N>& point_a, const std::array<T, N>& poin
 
 template <typename T, size_t N>
 T distance(const std::array<T, N>& point_a, const std::array<T, N>& point_b) {
-	return std::sqrt(distance_squared(point_a, point_b));
+    return std::sqrt(distance_squared(point_a, point_b));
+}
+    
+/*
+ Calculate the mean square float distance between a collection of points.
+ */
+template <typename T, size_t N>
+float point_collection_epsilon(const std::vector< std::array<T, N> >& point_a, const std::vector< std::array<T, N> >& point_b) {
+    assert( point_a.size() == point_b.size() );
+    float d_squared = 0.0f;
+    std::array<T, N> means_a;
+    std::array<T, N> means_b;
+    for (int dim=0; dim<N; dim++){
+        for (int pointIndex=0; pointIndex<point_a.size();pointIndex++){
+            means_a[dim]+= point_a[pointIndex][dim];
+        }
+        means_a[dim]/=point_a.size();
+    }
+    for (int dim=0; dim<N; dim++){
+        for (int pointIndex=0; pointIndex<point_b.size();pointIndex++){
+            means_b[dim]+= point_b[pointIndex][dim];
+        }
+        means_b[dim]/=point_b.size();
+    }
+    d_squared =distance(means_a, means_b);
+    
+    return d_squared;
 }
 
 /*
@@ -183,10 +209,11 @@ used for initializing the means.
 */
 template <typename T, size_t N>
 std::tuple<std::vector<std::array<T, N>>, std::vector<uint32_t>> kmeans_lloyd(
-	const std::vector<std::array<T, N>>& data, uint32_t k) {
+	const std::vector<std::array<T, N>>& data, uint32_t k, int maxIter, float epsilon=0.0f) {
 	static_assert(std::is_arithmetic<T>::value && std::is_signed<T>::value,
 		"kmeans_lloyd requires the template parameter T to be a signed arithmetic type (e.g. float, double, int)");
 	assert(k > 0); // k must be greater than zero
+    assert(maxIter > 0); //Maximum kmeans iterations must be greater than zero
 	assert(data.size() >= k); // there must be at least k data points
 	std::vector<std::array<T, N>> means = details::random_plusplus(data, k);
 
@@ -199,10 +226,11 @@ std::tuple<std::vector<std::array<T, N>>, std::vector<uint32_t>> kmeans_lloyd(
 		old_means = means;
 		means = details::calculate_means(data, clusters, old_means, k);
 		++count;
-	} while (means != old_means);
+	} while (details::point_collection_epsilon(means, old_means) > epsilon && count < maxIter);
 
 	return std::tuple<std::vector<std::array<T, N>>, std::vector<uint32_t>>(means, clusters);
 }
+    
 
 } // namespace dkm
 
