@@ -125,18 +125,12 @@ std::vector<std::array<T, N>> random_plusplus(const std::vector<std::array<T, N>
 		input_size_t i = 0;
 		std::discrete_distribution<input_size_t> generator(distances.size(), 0.0, 0.0, [&distances, &i](double) { return distances[i++]; });
 #endif
-        if (std::isnan(generator.probabilities()[0]))
+        auto index = generator(rand_engine);
+        if (index == generator.probabilities().size())
         {
-            means.push_back(data[0]);
+            index = 0;
         }
-        //if (std::isnan(generator._Par._Pvec[0]))
-        //{
-        //    means.push_back(data[0]);
-        //}
-        else
-        {
-            means.push_back(data[generator(rand_engine)]);
-        }
+        means.push_back(data[index]);
 	}
 	return means;
 }
