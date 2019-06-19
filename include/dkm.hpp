@@ -9,10 +9,14 @@
 #include <cassert>
 #include <cstddef>
 #include <cstdint>
-#include <random>
 #include <tuple>
 #include <type_traits>
 #include <vector>
+
+#if defined(_DEBUG) && (defined(WIN32) || defined(_WINDOWS))
+#undef _DEBUG
+#endif
+#include <random>
 
 /*
 DKM - A k-means implementation that is generic across variable data dimensions.
@@ -121,7 +125,18 @@ std::vector<std::array<T, N>> random_plusplus(const std::vector<std::array<T, N>
 		input_size_t i = 0;
 		std::discrete_distribution<input_size_t> generator(distances.size(), 0.0, 0.0, [&distances, &i](double) { return distances[i++]; });
 #endif
-		means.push_back(data[generator(rand_engine)]);
+        if (std::isnan(generator.probabilities()[0]))
+        {
+            means.push_back(data[0]);
+        }
+        //if (std::isnan(generator._Par._Pvec[0]))
+        //{
+        //    means.push_back(data[0]);
+        //}
+        else
+        {
+            means.push_back(data[generator(rand_engine)]);
+        }
 	}
 	return means;
 }
