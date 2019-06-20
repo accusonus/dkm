@@ -15,8 +15,11 @@
 
 #if defined(_DEBUG) && (defined(WIN32) || defined(_WINDOWS))
 #undef _DEBUG
-#endif
 #include <random>
+#define _DEBUG
+#else
+#include <random>
+#endif
 
 /*
 DKM - A k-means implementation that is generic across variable data dimensions.
