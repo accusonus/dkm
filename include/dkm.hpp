@@ -99,17 +99,24 @@ std::vector<T> closest_distance(
 /*
 This is an alternate initialization method based on the [kmeans++](https://en.wikipedia.org/wiki/K-means%2B%2B)
 initialization algorithm.
+
+A default seed value can help to make things reproducible. This argument was added to fix Rhythmiq's save-load system.
+More info [here](https://github.com/accusonus/rhythmiq/issues/844)
 */
 template <typename T, size_t N>
-std::vector<std::array<T, N>> random_plusplus(const std::vector<std::array<T, N>>& data, uint32_t k) {
+    std::vector<std::array<T, N>> random_plusplus(const std::vector<std::array<T, N>>& data, uint32_t k, int defaultSeed = -1) {
 	assert(k > 0);
 	using input_size_t = typename std::array<T, N>::size_type;
 	std::vector<std::array<T, N>> means;
 	// Using a very simple PRBS generator, parameters selected according to
 	// https://en.wikipedia.org/wiki/Linear_congruential_generator#Parameters_in_common_use
-	std::random_device rand_device;
-	std::linear_congruential_engine<uint64_t, 6364136223846793005, 1442695040888963407, UINT64_MAX> rand_engine(
-		rand_device());
+    auto seed = defaultSeed;
+    if (defaultSeed == -1)
+    {
+        std::random_device rand_device;
+        seed = rand_device();
+    }
+    std::linear_congruential_engine<uint64_t, 6364136223846793005, 1442695040888963407, UINT64_MAX> rand_engine (seed);
 
 	// Select first mean at random from the set
 	{
@@ -218,16 +225,19 @@ Implementation details:
 This implementation of k-means uses [Lloyd's Algorithm](https://en.wikipedia.org/wiki/Lloyd%27s_algorithm)
 with the [kmeans++](https://en.wikipedia.org/wiki/K-means%2B%2B)
 used for initializing the means.
+
+@param seed     the default engine seed number for the initialization of kmeans++.
+                By default (seed = -1) the kmeans++ algorithm chooses the cluster center at random.
 */
 template <typename T, size_t N>
 std::tuple<std::vector<std::array<T, N>>, std::vector<uint32_t>> kmeans_lloyd(
-	const std::vector<std::array<T, N>>& data, uint32_t k, int maxIter, float epsilon=0.0f) {
+	const std::vector<std::array<T, N>>& data, uint32_t k, int maxIter, int seed=-1, float epsilon=0.0f) {
 	static_assert(std::is_arithmetic<T>::value && std::is_signed<T>::value,
 		"kmeans_lloyd requires the template parameter T to be a signed arithmetic type (e.g. float, double, int)");
 	assert(k > 0); // k must be greater than zero
     assert(maxIter > 0); //Maximum kmeans iterations must be greater than zero
 	assert(data.size() >= k); // there must be at least k data points
-	std::vector<std::array<T, N>> means = details::random_plusplus(data, k);
+	std::vector<std::array<T, N>> means = details::random_plusplus(data, k, seed);
 
 	std::vector<std::array<T, N>> old_means;
 	std::vector<uint32_t> clusters;
