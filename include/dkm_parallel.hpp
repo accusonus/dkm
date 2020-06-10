@@ -126,21 +126,21 @@ std::tuple<std::vector<std::array<T, N>>, std::vector<uint32_t>> kmeans_lloyd_pa
 	assert(data.size() >= parameters.get_k()); // there must be at least k data points
 	std::random_device rand_device;
 	uint64_t seed = parameters.has_random_seed() ? parameters.get_random_seed() : rand_device();
-	std::vector<std::array<T, N>> means = details::random_plusplus_parallel(data, parameters.get_k(), seed);
+	//std::vector<std::array<T, N>> means = details::random_plusplus_parallel(data, parameters.get_k(), seed);
+
+	// Use the first two points of the dataset as the initial means (cluster centers)
+	std::vector<std::array<T, N>> means = { data[0], data[1] };
 
 	std::vector<std::array<T, N>> old_means;
-	std::vector<std::array<T, N>> old_old_means;
 	std::vector<uint32_t> clusters;
 	// Calculate new means until convergence is reached or we hit the maximum iteration count
 	uint64_t count = 0;
 	do {
 		clusters = details::calculate_clusters_parallel(data, means);
-		old_old_means = old_means;
 		old_means = means;
 		means = details::calculate_means(data, clusters, old_means, parameters.get_k());
 		++count;
-	} while ((means != old_means && means != old_old_means)
-		&& !(parameters.has_max_iteration() && count == parameters.get_max_iteration())
+	} while ( !(parameters.has_max_iteration() && count == parameters.get_max_iteration())
 		&& !(parameters.has_min_delta() && details::deltas_below_limit(details::deltas(old_means, means), parameters.get_min_delta())));
 
 	return std::tuple<std::vector<std::array<T, N>>, std::vector<uint32_t>>(means, clusters);
