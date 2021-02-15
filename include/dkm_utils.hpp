@@ -5,6 +5,7 @@
 #include <tuple>
 #include <vector>
 
+#include "dkm_parallel.hpp"
 #include "dkm.hpp"
 
 namespace dkm {
@@ -123,5 +124,38 @@ std::tuple<std::vector<std::array<T, N>>, std::vector<uint32_t>> get_best_means(
 	// copy and return
 	return best_means;
 }
+
+
+
+
+    /**
+	 * Return the best clustering obtained from a given number of k-means
+	 * calculations.
+	 *
+	 * @param points  Sequence of points to be clustered.
+	 * @param k		  Number of clusters
+	 * @param n_init  Number of times a k-means clustering will be calculated.
+	 *
+	 * @return Clustering with the lowest inertia.
+	 */
+
+
+	template <typename T, size_t N>
+	std::tuple<std::vector<std::array<T, N>>, std::vector<uint32_t>> get_best_means_parallel(
+	const std::vector<std::array<T, N>>& points, const clustering_parameters<T>& parameters, uint32_t n_init = 10) {
+		auto best_means = kmeans_lloyd_parallel(points, parameters);
+		auto best_inertia = means_inertia(points, best_means, parameters.get_k());
+
+		for (uint32_t i = 0; i < n_init - 1; ++i) {
+			auto curr_means = kmeans_lloyd_parallel(points, parameters);
+			auto curr_inertia = means_inertia(points, curr_means, parameters.get_k());
+			if (curr_inertia < best_inertia) {
+				best_inertia = curr_inertia;
+				best_means = curr_means;
+			}
+		}
+		// copy and return
+		return best_means;
+	}
 
 } // namespace dkm
