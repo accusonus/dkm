@@ -143,11 +143,18 @@ std::tuple<std::vector<std::array<T, N>>, std::vector<uint32_t>> get_best_means(
 	template <typename T, size_t N>
 	std::tuple<std::vector<std::array<T, N>>, std::vector<uint32_t>> get_best_means_parallel(
 	const std::vector<std::array<T, N>>& points, const clustering_parameters<T>& parameters, uint32_t n_init = 10) {
-		auto best_means = kmeans_lloyd_parallel(points, parameters);
+
+		// seed generator once 
+		std::random_device rand_device;
+		uint64_t seed = parameters.has_random_seed() ? parameters.get_random_seed() : rand_device();
+		std::linear_congruential_engine<uint64_t, 6364136223846793005, 1442695040888963407, UINT64_MAX> rand_engine(seed);
+
+
+		auto best_means = kmeans_lloyd_parallel(points, parameters, rand_engine);
 		auto best_inertia = means_inertia(points, best_means, parameters.get_k());
 
 		for (uint32_t i = 0; i < n_init - 1; ++i) {
-			auto curr_means = kmeans_lloyd_parallel(points, parameters);
+			auto curr_means = kmeans_lloyd_parallel(points, parameters, rand_engine);
 			auto curr_inertia = means_inertia(points, curr_means, parameters.get_k());
 			if (curr_inertia < best_inertia) {
 				best_inertia = curr_inertia;
