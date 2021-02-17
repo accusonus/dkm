@@ -132,9 +132,9 @@ std::tuple<std::vector<std::array<T, N>>, std::vector<uint32_t>> get_best_means(
 	 * Return the best clustering obtained from a given number of k-means
 	 * calculations.
 	 *
-	 * @param points  Sequence of points to be clustered.
-	 * @param k		  Number of clusters
-	 * @param n_init  Number of times a k-means clustering will be calculated.
+	 * @param points		 Sequence of points to be clustered.
+	 * @param parameters	 Clustering related parameters.
+	 * @param n_init		 Number of times a k-means clustering will be calculated.
 	 *
 	 * @return Clustering with the lowest inertia.
 	 */
@@ -147,7 +147,7 @@ std::tuple<std::vector<std::array<T, N>>, std::vector<uint32_t>> get_best_means(
 		// seed generator once 
 		std::random_device rand_device;
 		uint64_t seed = parameters.has_random_seed() ? parameters.get_random_seed() : rand_device();
-		std::linear_congruential_engine<uint64_t, 6364136223846793005, 1442695040888963407, UINT64_MAX> rand_engine(seed);
+		CustomGenerator rand_engine(seed);
 
 
 		auto best_means = kmeans_lloyd_parallel(points, parameters, rand_engine);
