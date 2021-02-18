@@ -15,7 +15,7 @@
 #include <vector>
 
 #include "dkm.hpp"
-#include "dkm_utils.hpp""
+#include "dkm_utils.hpp"
 
 // Using a very simple PRBS generator, parameters selected according to
 // https://en.wikipedia.org/wiki/Linear_congruential_generator#Parameters_in_common_use
