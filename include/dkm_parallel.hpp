@@ -123,14 +123,13 @@ template <typename T, size_t N>
 std::tuple<std::vector<std::array<T, N>>, std::vector<uint32_t>> kmeans_lloyd_parallel(
 	const std::vector<std::array<T, N>>& data,
 	const clustering_parameters<T>& parameters, 
-	CustomGenerator& rand_engine=CustomGenerator(0)) 
+	const CustomGenerator& rand_engine = CustomGenerator(0)) 
 {
 	static_assert(std::is_arithmetic<T>::value && std::is_signed<T>::value,
 		"kmeans_lloyd requires the template parameter T to be a signed arithmetic type (e.g. float, double, int)");
 	assert(parameters.get_k() > 0); // k must be greater than zero
 	assert(data.size() >= parameters.get_k()); // there must be at least k data points
-
-	std::vector<std::array<T, N>> means = details::random_plusplus_parallel(data, parameters.get_k(), rand_engine);
+	std::vector<std::array<T, N>> means = details::random_plusplus_parallel(data, parameters.get_k(), const_cast<CustomGenerator&>(rand_engine));
 
 	std::vector<std::array<T, N>> old_means;
 	std::vector<std::array<T, N>> old_old_means;
