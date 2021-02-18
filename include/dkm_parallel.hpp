@@ -16,6 +16,10 @@
 
 #include "dkm.hpp"
 
+// Using a very simple PRBS generator, parameters selected according to
+// https://en.wikipedia.org/wiki/Linear_congruential_generator#Parameters_in_common_use
+using CustomGenerator = std::linear_congruential_engine<uint64_t, 6364136223846793005, 1442695040888963407, UINT64_MAX>;
+
 /*
 DKM - A k-means implementation that is generic across variable data dimensions.
 */
@@ -52,14 +56,12 @@ This is an alternate initialization method based on the [kmeans++](https://en.wi
 initialization algorithm.
 */
 template <typename T, size_t N>
-std::vector<std::array<T, N>> random_plusplus_parallel(const std::vector<std::array<T, N>>& data, uint32_t k, uint64_t seed) {
+std::vector<std::array<T, N>> random_plusplus_parallel(
+	const std::vector<std::array<T, N>>& data, uint32_t k, CustomGenerator& rand_engine) {
 	assert(k > 0);
 	assert(data.size() > 0);
 	using input_size_t = typename std::array<T, N>::size_type;
 	std::vector<std::array<T, N>> means;
-	// Using a very simple PRBS generator, parameters selected according to
-	// https://en.wikipedia.org/wiki/Linear_congruential_generator#Parameters_in_common_use
-	std::linear_congruential_engine<uint64_t, 6364136223846793005, 1442695040888963407, UINT64_MAX> rand_engine(seed);
 
 	// Select first mean at random from the set
 	{
@@ -115,18 +117,19 @@ Returns a std::tuple containing:
 Implementation details:
 This implementation of k-means uses [Lloyd's Algorithm](https://en.wikipedia.org/wiki/Lloyd%27s_algorithm)
 with the [kmeans++](https://en.wikipedia.org/wiki/K-means%2B%2B)
-used for initializing the means.
+used for initializing the means. An optional argument for a seeded generator is also provided.
 */
 template <typename T, size_t N>
 std::tuple<std::vector<std::array<T, N>>, std::vector<uint32_t>> kmeans_lloyd_parallel(
-	const std::vector<std::array<T, N>>& data, const clustering_parameters<T>& parameters) {
+	const std::vector<std::array<T, N>>& data,
+	const clustering_parameters<T>& parameters, 
+	const CustomGenerator& rand_engine = CustomGenerator(0)) 
+{
 	static_assert(std::is_arithmetic<T>::value && std::is_signed<T>::value,
 		"kmeans_lloyd requires the template parameter T to be a signed arithmetic type (e.g. float, double, int)");
 	assert(parameters.get_k() > 0); // k must be greater than zero
 	assert(data.size() >= parameters.get_k()); // there must be at least k data points
-	std::random_device rand_device;
-	uint64_t seed = parameters.has_random_seed() ? parameters.get_random_seed() : rand_device();
-	std::vector<std::array<T, N>> means = details::random_plusplus_parallel(data, parameters.get_k(), seed);
+	std::vector<std::array<T, N>> means = details::random_plusplus_parallel(data, parameters.get_k(), const_cast<CustomGenerator&>(rand_engine));
 
 	std::vector<std::array<T, N>> old_means;
 	std::vector<std::array<T, N>> old_old_means;
@@ -154,7 +157,9 @@ Any code still using this signature should move to the version of this function 
 template <typename T, size_t N>
 std::tuple<std::vector<std::array<T, N>>, std::vector<uint32_t>> kmeans_lloyd_parallel(
 	const std::vector<std::array<T, N>>& data, uint32_t k,
-	uint64_t max_iter = 0, T min_delta = -1.0) {
+	uint64_t max_iter = 0,
+	T min_delta = -1.0
+	) {
 	clustering_parameters<T> parameters(k);
 	if (max_iter != 0) {
 		parameters.set_max_iteration(max_iter);
