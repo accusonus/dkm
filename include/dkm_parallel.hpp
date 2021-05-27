@@ -18,8 +18,9 @@
 
 // Using a very simple PRBS generator, parameters selected according to
 // https://en.wikipedia.org/wiki/Linear_congruential_generator#Parameters_in_common_use
-using CustomGenerator = std::linear_congruential_engine<uint64_t, 6364136223846793005, 1442695040888963407, UINT64_MAX>;
-
+//using CustomGenerator = std::linear_congruential_engine<uint64_t, 6364136223846793005, 1442695040888963407, UINT64_MAX>;
+//using CustomGenerator = std::minstd_rand0;
+using CustomGenerator = std::mt19937;
 /*
 DKM - A k-means implementation that is generic across variable data dimensions.
 */
