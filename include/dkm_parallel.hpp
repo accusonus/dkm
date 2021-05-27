@@ -57,7 +57,7 @@ initialization algorithm.
 */
 template <typename T, size_t N>
 std::vector<std::array<T, N>> random_plusplus_parallel(
-	const std::vector<std::array<T, N>>& data, uint32_t k, CustomGenerator& rand_engine) {
+	const std::vector<std::array<T, N>>& data, uint32_t k, CustomGenerator& rand_engine, const int currentIteration, const int maxIterations) {
 	assert(k > 0);
 	assert(data.size() > 0);
 	using input_size_t = typename std::array<T, N>::size_type;
@@ -65,8 +65,10 @@ std::vector<std::array<T, N>> random_plusplus_parallel(
 
 	// Select first mean at random from the set
 	{
-		std::uniform_int_distribution<input_size_t> uniform_generator(0, data.size() - 1);
-		means.push_back(data[uniform_generator(rand_engine)]);
+        const int numFrames = data.size();
+        const int uniformSpacing = numFrames / maxIterations;
+        const int currentSampledFrame = currentIteration * uniformSpacing;
+		means.push_back(data[currentSampledFrame]);
 	}
 
 	for (uint32_t count = 1; count < k; ++count) {
@@ -122,14 +124,16 @@ used for initializing the means. An optional argument for a seeded generator is 
 template <typename T, size_t N>
 std::tuple<std::vector<std::array<T, N>>, std::vector<uint32_t>> kmeans_lloyd_parallel(
 	const std::vector<std::array<T, N>>& data,
-	const clustering_parameters<T>& parameters, 
-	const CustomGenerator& rand_engine = CustomGenerator(0)) 
+	const clustering_parameters<T>& parameters,
+    const int currentIteration,
+    const int maxIterations,
+	const CustomGenerator& rand_engine = CustomGenerator(0))
 {
 	static_assert(std::is_arithmetic<T>::value && std::is_signed<T>::value,
 		"kmeans_lloyd requires the template parameter T to be a signed arithmetic type (e.g. float, double, int)");
 	assert(parameters.get_k() > 0); // k must be greater than zero
 	assert(data.size() >= parameters.get_k()); // there must be at least k data points
-	std::vector<std::array<T, N>> means = details::random_plusplus_parallel(data, parameters.get_k(), const_cast<CustomGenerator&>(rand_engine));
+	std::vector<std::array<T, N>> means = details::random_plusplus_parallel(data, parameters.get_k(), const_cast<CustomGenerator&>(rand_engine), currentIteration, maxIterations);
 
 	std::vector<std::array<T, N>> old_means;
 	std::vector<std::array<T, N>> old_old_means;

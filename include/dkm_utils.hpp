@@ -150,11 +150,11 @@ std::tuple<std::vector<std::array<T, N>>, std::vector<uint32_t>> get_best_means(
 		CustomGenerator rand_engine(seed);
 
 
-		auto best_means = kmeans_lloyd_parallel(points, parameters, rand_engine);
+		auto best_means = kmeans_lloyd_parallel(points, parameters, 0, static_cast<int>(n_init), rand_engine);
 		auto best_inertia = means_inertia(points, best_means, parameters.get_k());
 
 		for (uint32_t i = 0; i < n_init - 1; ++i) {
-			auto curr_means = kmeans_lloyd_parallel(points, parameters, rand_engine);
+			auto curr_means = kmeans_lloyd_parallel(points, parameters, static_cast<int>(i+1), static_cast<int>(n_init), rand_engine);
 			auto curr_inertia = means_inertia(points, curr_means, parameters.get_k());
 			if (curr_inertia < best_inertia) {
 				best_inertia = curr_inertia;
