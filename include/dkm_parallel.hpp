@@ -57,7 +57,7 @@ initialization algorithm.
 */
 template <typename T, size_t N>
 std::vector<std::array<T, N>> random_plusplus_parallel(
-	const std::vector<std::array<T, N>>& data, uint32_t k, CustomGenerator& rand_engine, const int currentIteration, const int maxIterations) {
+	const std::vector<std::array<T, N>>& data, uint32_t k, CustomGenerator& rand_engine, const uint32_t currentIteration, const uint32_t maxIterations) {
 	assert(k > 0);
 	assert(data.size() > 0);
 	using input_size_t = typename std::array<T, N>::size_type;
@@ -66,8 +66,8 @@ std::vector<std::array<T, N>> random_plusplus_parallel(
 	// Select first mean at random from the set
 	{
         const int numFrames = data.size();
-        const int uniformSpacing = numFrames / maxIterations;
-        const int currentSampledFrame = currentIteration * uniformSpacing;
+        const int uniformSpacing = numFrames / static_cast<int>(maxIterations);
+        const int currentSampledFrame = static_cast<int>(currentIteration) * uniformSpacing;
 		means.push_back(data[currentSampledFrame]);
 	}
 
@@ -125,8 +125,8 @@ template <typename T, size_t N>
 std::tuple<std::vector<std::array<T, N>>, std::vector<uint32_t>> kmeans_lloyd_parallel(
 	const std::vector<std::array<T, N>>& data,
 	const clustering_parameters<T>& parameters,
-    const int currentIteration,
-    const int maxIterations,
+    const uint32_t currentIteration,
+    const uint32_t maxIterations,
 	const CustomGenerator& rand_engine = CustomGenerator(0))
 {
 	static_assert(std::is_arithmetic<T>::value && std::is_signed<T>::value,
