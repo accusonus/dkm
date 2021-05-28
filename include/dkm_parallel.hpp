@@ -57,16 +57,22 @@ initialization algorithm.
 */
 template <typename T, size_t N>
 std::vector<std::array<T, N>> random_plusplus_parallel(
-	const std::vector<std::array<T, N>>& data, uint32_t k, CustomGenerator& rand_engine) {
+	const std::vector<std::array<T, N>>& data,
+    uint32_t k,
+    CustomGenerator& rand_engine,
+    const uint32_t currentClusteringRunId,
+    const uint32_t totalClusteringRuns) {
 	assert(k > 0);
 	assert(data.size() > 0);
 	using input_size_t = typename std::array<T, N>::size_type;
 	std::vector<std::array<T, N>> means;
 
-	// Select first mean at random from the set
+    // replaced the `std::uniform_int_distribution` with a simpler deterministic and cross-platform solution.
 	{
-		std::uniform_int_distribution<input_size_t> uniform_generator(0, data.size() - 1);
-		means.push_back(data[uniform_generator(rand_engine)]);
+        const int numFrames = data.size();
+        const int uniformSpacing = numFrames / static_cast<int>(totalClusteringRuns);
+        const int currentSampledFrame = static_cast<int>(currentClusteringRunId) * uniformSpacing;
+		means.push_back(data[currentSampledFrame]);
 	}
 
 	for (uint32_t count = 1; count < k; ++count) {
@@ -122,18 +128,26 @@ used for initializing the means. An optional argument for a seeded generator is 
 template <typename T, size_t N>
 std::tuple<std::vector<std::array<T, N>>, std::vector<uint32_t>> kmeans_lloyd_parallel(
 	const std::vector<std::array<T, N>>& data,
-	const clustering_parameters<T>& parameters, 
-	const CustomGenerator& rand_engine = CustomGenerator(0)) 
+	const clustering_parameters<T>& parameters,
+    const uint32_t currentClusteringRunId,
+    const uint32_t totalClusteringRuns,
+	const CustomGenerator& rand_engine = CustomGenerator(0))
 {
 	static_assert(std::is_arithmetic<T>::value && std::is_signed<T>::value,
 		"kmeans_lloyd requires the template parameter T to be a signed arithmetic type (e.g. float, double, int)");
 	assert(parameters.get_k() > 0); // k must be greater than zero
 	assert(data.size() >= parameters.get_k()); // there must be at least k data points
-	std::vector<std::array<T, N>> means = details::random_plusplus_parallel(data, parameters.get_k(), const_cast<CustomGenerator&>(rand_engine));
+    
+	std::vector<std::array<T, N>> means = details::random_plusplus_parallel(data,
+                                                                            parameters.get_k(),
+                                                                            const_cast<CustomGenerator&>(rand_engine),
+                                                                            currentClusteringRunId,
+                                                                            totalClusteringRuns);
 
 	std::vector<std::array<T, N>> old_means;
 	std::vector<std::array<T, N>> old_old_means;
 	std::vector<uint32_t> clusters;
+    
 	// Calculate new means until convergence is reached or we hit the maximum iteration count
 	uint64_t count = 0;
 	do {
